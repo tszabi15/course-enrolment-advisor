@@ -1,0 +1,115 @@
+services:
+  # 1. PostgreSQL (System of Record for Business Entities + pgvector)
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: advisor_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: advisor_db
+      POSTGRES_USER: advisor_user
+      POSTGRES_PASSWORD: advisor_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U advisor_user -d advisor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - advisor_net
+
+  # 2. MongoDB (System of Record for Flexible Course Documents)
+  mongodb:
+    image: mongo:7.0
+    container_name: advisor_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: advisor_admin
+      MONGO_INITDB_ROOT_PASSWORD: advisor_secret
+      MONGO_INITDB_DATABASE: advisor_catalog
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - advisor_net
+
+  # 3. Redis (Derived Student Session Cache)
+  redis:
+    image: redis:7.2-alpine
+    container_name: advisor_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - advisor_net
+
+  # 4. Neo4j (Derived Graph for Prerequisites & Completed Courses)
+  neo4j:
+    image: neo4j:5.20-community
+    container_name: advisor_neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/advisor_neo4j_password
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      - "7474:7474" # Browser UI
+      - "7687:7687" # Bolt Protocol
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p advisor_neo4j_password 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    networks:
+      - advisor_net
+
+  # 5. Qdrant (Derived Dedicated Vector Search Engine)
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    container_name: advisor_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333" # REST API
+      - "6334:6334" # gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/6333' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - advisor_net
+
+volumes:
+  pg_data:
+    driver: local
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+  neo4j_data:
+    driver: local
+  qdrant_data:
+    driver: local
+
+networks:
+  advisor_net:
+    driver: bridge
