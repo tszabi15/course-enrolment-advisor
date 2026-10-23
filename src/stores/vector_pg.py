@@ -97,9 +97,10 @@ class PgVectorClient:
                     cur.execute("SET LOCAL enable_indexscan = on;")
                     cur.execute(f"SET LOCAL hnsw.ef_search = {ef_search};")
                     try:
-                        cur.execute(f"SET LOCAL hnsw.iterative_scan = '{iterative_scan}';")
+                        with conn.savepoint():
+                            cur.execute(f"SET LOCAL hnsw.iterative_scan = '{iterative_scan}';")
                     except Exception:
-                        pass  # Postgres version compatibility
+                        pass
 
                     if semester:
                         sql = """

@@ -15,15 +15,19 @@ logger = logging.getLogger(__name__)
 
 
 class RedisClient:
-    def __init__(self, host: Optional[str] = None, port: Optional[int] = None, password: Optional[str] = None):
+    def __init__(self, host: Optional[str] = None, port: Optional[int] = None, password: Optional[str] = None, use_mock: bool = False):
         self.host = host or config.redis.host
         self.port = port or config.redis.port
         self.password = password or config.redis.password
+        self.use_mock = use_mock
         self._client = None
         self._is_connected = False
         self._mock_kv: Dict[str, Tuple[str, float]] = {}  # key -> (value, expiry_timestamp)
 
     def connect(self):
+        if self.use_mock:
+            self._is_connected = False
+            return
         try:
             import redis
             self._client = redis.Redis(

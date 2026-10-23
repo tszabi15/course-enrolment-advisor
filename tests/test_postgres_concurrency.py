@@ -22,7 +22,7 @@ from src.stores.postgres_client import PostgresClient, SeatFullError, AlreadyEnr
 
 
 def test_single_enrolment_success():
-    client = PostgresClient()
+    client = PostgresClient(use_mock=True)
     client.connect()
     client._init_mock_storage()
 
@@ -36,7 +36,7 @@ def test_single_enrolment_success():
 
 
 def test_enrolment_seat_full_rejected():
-    client = PostgresClient()
+    client = PostgresClient(use_mock=True)
     client.connect()
     client._init_mock_storage()
 
@@ -48,7 +48,7 @@ def test_enrolment_seat_full_rejected():
 
 
 def test_duplicate_enrolment_rejected():
-    client = PostgresClient()
+    client = PostgresClient(use_mock=True)
     client.connect()
     client._init_mock_storage()
 
@@ -64,7 +64,7 @@ def test_concurrent_two_students_one_seat_race():
     Required query test from specification:
     Two students taking the last seat: one enrolment commits, the other is rejected.
     """
-    client = PostgresClient()
+    client = PostgresClient(use_mock=True)
     client.connect()
     client._init_mock_storage()
 

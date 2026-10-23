@@ -7,7 +7,7 @@ from src.stores.mongo_client import MongoClient
 
 
 def test_mongo_lab_and_exam_query():
-    mongo = MongoClient()
+    mongo = MongoClient(use_mock=True)
     mongo.connect()
 
     # Seed mock polymorphic documents

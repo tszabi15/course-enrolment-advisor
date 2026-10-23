@@ -99,14 +99,26 @@ class AlreadyEnrolledError(Exception):
 
 
 class PostgresClient:
-    def __init__(self, dsn: Optional[str] = None):
+    def __init__(self, dsn: Optional[str] = None, use_mock: bool = False):
         self.dsn = dsn or config.postgres.dsn
+        self.use_mock = use_mock
         self._pool = None
         self._is_connected = False
-        self._mock_data = None
+        self._mock_data = {
+            "students": {},
+            "courses": {},
+            "sections": {},
+            "enrolments": {},
+            "grades": {},
+            "embeddings": {}
+        }
         self._mock_lock = threading.Lock()
 
     def connect(self):
+        if self.use_mock:
+            self._is_connected = False
+            self._init_mock_storage()
+            return
         try:
             import psycopg
             from psycopg_pool import ConnectionPool

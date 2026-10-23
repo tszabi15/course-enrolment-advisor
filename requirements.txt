@@ -1,9 +1,10 @@
 # Core Database Drivers
 psycopg[binary]>=3.1.18
+psycopg_pool>=3.2.0
 pymongo>=4.6.3
 redis>=5.0.3
 neo4j>=5.19.0
-qdrant-client>=1.8.2
+qdrant-client>=1.9.0,<1.10.0
 
 # Vector Embeddings & Scientific Computing
 sentence-transformers>=2.6.1

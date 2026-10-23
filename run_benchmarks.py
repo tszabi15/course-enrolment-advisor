@@ -100,64 +100,60 @@ def run_15_eligibility_tests(advisor: CourseEnrolmentAdvisor) -> List[Dict[str, 
 
     results = []
 
-    # Configure special mock test fixtures
-    # Full section: id 999
-    advisor.pg._mock_data["sections"][999] = {
-        "id": 999, "course_id": 2, "term": "2026-Fall", "capacity": 20, "seats_taken": 20
-    }
-    # Section with 1 remaining seat: id 888
-    advisor.pg._mock_data["sections"][888] = {
-        "id": 888, "course_id": 2, "term": "2026-Fall", "capacity": 10, "seats_taken": 9
-    }
-    # Section 1 open
-    advisor.pg._mock_data["sections"][1] = {
-        "id": 1, "course_id": 1, "term": "2026-Fall", "capacity": 30, "seats_taken": 10
-    }
-    advisor.pg._mock_data["sections"][2] = {
-        "id": 2, "course_id": 2, "term": "2026-Fall", "capacity": 30, "seats_taken": 10
-    }
-    advisor.pg._mock_data["sections"][3] = {
-        "id": 3, "course_id": 3, "term": "2026-Fall", "capacity": 30, "seats_taken": 10
-    }
-    advisor.pg._mock_data["sections"][5] = {
-        "id": 5, "course_id": 5, "term": "2026-Fall", "capacity": 30, "seats_taken": 10
-    }
-    advisor.pg._mock_data["sections"][15] = {
-        "id": 15, "course_id": 15, "term": "2026-Fall", "capacity": 30, "seats_taken": 10
-    }
-    advisor.pg._mock_data["sections"][100] = {
-        "id": 100, "course_id": 1, "term": "2026-Fall", "capacity": 40, "seats_taken": 5
-    }
-    advisor.pg._mock_data["sections"][101] = {
-        "id": 101, "course_id": 1, "term": "2026-Summer", "capacity": 25, "seats_taken": 5
-    }
+    # Configure special fixtures (both in live Postgres and in-memory mock)
+    sections_to_add = [
+        {"id": 999, "course_id": 2, "term": "2026-Fall", "capacity": 20, "seats_taken": 20},
+        {"id": 888, "course_id": 2, "term": "2026-Fall", "capacity": 10, "seats_taken": 9},
+        {"id": 1, "course_id": 1, "term": "2026-Fall", "capacity": 30, "seats_taken": 10},
+        {"id": 2, "course_id": 2, "term": "2026-Fall", "capacity": 30, "seats_taken": 10},
+        {"id": 3, "course_id": 3, "term": "2026-Fall", "capacity": 30, "seats_taken": 10},
+        {"id": 5, "course_id": 5, "term": "2026-Fall", "capacity": 30, "seats_taken": 10},
+        {"id": 15, "course_id": 15, "term": "2026-Fall", "capacity": 30, "seats_taken": 10},
+        {"id": 100, "course_id": 1, "term": "2026-Fall", "capacity": 40, "seats_taken": 5},
+        {"id": 101, "course_id": 1, "term": "2026-Summer", "capacity": 25, "seats_taken": 5},
+    ]
+    test_students = [501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 514, 515, 516, 801, 802]
+    
+    if advisor.pg._is_connected:
+        with advisor.pg._pool.connection() as conn:
+            with conn.cursor() as cur:
+                for sid in test_students:
+                    cur.execute(
+                        "INSERT INTO students (id, name, email, matriculation_year, major) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (id) DO NOTHING;",
+                        (sid, f"TestStudent{sid}", f"test{sid}@university.edu", 2026, "Computer Science")
+                    )
+                for sec in sections_to_add:
+                    cur.execute(
+                        "INSERT INTO sections (id, course_id, term, capacity, seats_taken) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (id) DO UPDATE SET capacity = EXCLUDED.capacity, seats_taken = EXCLUDED.seats_taken;",
+                        (sec["id"], sec["course_id"], sec["term"], sec["capacity"], sec["seats_taken"])
+                    )
+                cur.execute(
+                    "INSERT INTO enrolments (student_id, section_id, status) VALUES (%s, %s, 'ENROLLED') ON CONFLICT DO NOTHING;",
+                    (504, 1)
+                )
+            conn.commit()
 
-    # Enrol student 504 in section 1 to test duplicate check
-    advisor.pg._mock_data["enrolments"][9999] = {
-        "id": 9999, "student_id": 504, "section_id": 1, "status": "ENROLLED"
-    }
+    if advisor.pg._mock_data is not None:
+        for sec in sections_to_add:
+            advisor.pg._mock_data["sections"][sec["id"]] = sec
+        advisor.pg._mock_data["enrolments"][9999] = {"id": 9999, "student_id": 504, "section_id": 1, "status": "ENROLLED"}
 
-    # Setup student completed grades in Neo4j mock
-    # Student 501 completed CS101 (id 1)
-    advisor.neo4j._mock_completed.append({"student_id": 501, "course_id": 1, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 503 completed CS101 (id 1)
-    advisor.neo4j._mock_completed.append({"student_id": 503, "course_id": 1, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 505 completed CS101, CS102 (ids 1, 2)
-    advisor.neo4j._mock_completed.append({"student_id": 505, "course_id": 1, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    advisor.neo4j._mock_completed.append({"student_id": 505, "course_id": 2, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 506 completed CS101 (id 1) only, missing CS102
-    advisor.neo4j._mock_completed.append({"student_id": 506, "course_id": 1, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 507 completed CS101 (id 1) and MATH205 (id 23, equivalent to MATH201 id 22)
-    advisor.neo4j._mock_completed.append({"student_id": 507, "course_id": 1, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    advisor.neo4j._mock_completed.append({"student_id": 507, "course_id": 23, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 511 completed CS101 with C (passed)
-    advisor.neo4j._mock_completed.append({"student_id": 511, "course_id": 1, "grade": "C", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 515 completed CS101 only
-    advisor.neo4j._mock_completed.append({"student_id": 515, "course_id": 1, "grade": "B", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 516 completed CS101 and MATH201
-    advisor.neo4j._mock_completed.append({"student_id": 516, "course_id": 1, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    advisor.neo4j._mock_completed.append({"student_id": 516, "course_id": 22, "grade": "A", "refreshed_at": "now", "source_id": "postgres_grades"})
-    # Student 202 completed CS101 with F (failed) -> passed=False, so NOT in _mock_completed
+    # Setup student completed grades in Neo4j (using sync_student_grades so both live Neo4j and mock are updated!)
+    test_grades = [
+        {"student_id": 501, "course_id": 1, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 503, "course_id": 1, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 505, "course_id": 1, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 505, "course_id": 2, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 506, "course_id": 1, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 507, "course_id": 1, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 507, "course_id": 23, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 511, "course_id": 1, "grade": "C", "grade_point": 2.0, "passed": True},
+        {"student_id": 515, "course_id": 1, "grade": "B", "grade_point": 3.0, "passed": True},
+        {"student_id": 516, "course_id": 1, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 516, "course_id": 22, "grade": "A", "grade_point": 4.0, "passed": True},
+        {"student_id": 510, "course_id": 1, "grade": "F", "grade_point": 0.0, "passed": False},
+    ]
+    advisor.neo4j.sync_student_grades(test_grades)
 
     for case_id, sid, cid, sec_id, desc, expected in tests:
         if case_id == 12:

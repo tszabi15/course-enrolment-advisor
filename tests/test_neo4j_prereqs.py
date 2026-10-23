@@ -8,7 +8,7 @@ from src.stores.neo4j_client import Neo4jClient
 
 
 def test_neo4j_completed_prerequisites():
-    neo = Neo4jClient()
+    neo = Neo4jClient(use_mock=True)
     neo.connect()
 
     courses = [
@@ -35,7 +35,7 @@ def test_neo4j_completed_prerequisites():
 
 
 def test_neo4j_course_equivalence():
-    neo = Neo4jClient()
+    neo = Neo4jClient(use_mock=True)
     neo.connect()
 
     courses = [
@@ -61,7 +61,7 @@ def test_neo4j_course_equivalence():
 
 
 def test_neo4j_shortest_prerequisite_path():
-    neo = Neo4jClient()
+    neo = Neo4jClient(use_mock=True)
     neo.connect()
 
     courses = [

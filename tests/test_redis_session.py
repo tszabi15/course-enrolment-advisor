@@ -7,7 +7,7 @@ from src.stores.redis_client import RedisClient
 
 
 def test_redis_session_lifecycle():
-    redis_client = RedisClient()
+    redis_client = RedisClient(use_mock=True)
     redis_client.connect()
 
     # Run lifecycle test with 2-second TTL
@@ -20,7 +20,7 @@ def test_redis_session_lifecycle():
 
 
 def test_redis_session_invalidation():
-    redis_client = RedisClient()
+    redis_client = RedisClient(use_mock=True)
     redis_client.connect()
 
     redis_client.save_planned_courses(student_id=88, course_ids=[201, 202])

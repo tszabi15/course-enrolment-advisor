@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 class Neo4jClient:
-    def __init__(self, uri: Optional[str] = None, user: Optional[str] = None, password: Optional[str] = None):
+    def __init__(self, uri: Optional[str] = None, user: Optional[str] = None, password: Optional[str] = None, use_mock: bool = False):
         self.uri = uri or config.neo4j.uri
         self.user = user or config.neo4j.user
         self.password = password or config.neo4j.password
+        self.use_mock = use_mock
         self._driver = None
         self._is_connected = False
         # In-memory graph fallback
@@ -28,6 +29,9 @@ class Neo4jClient:
         self._mock_completed: List[Dict[str, Any]] = []
 
     def connect(self):
+        if self.use_mock:
+            self._is_connected = False
+            return
         try:
             from neo4j import GraphDatabase
             self._driver = GraphDatabase.driver(self.uri, auth=(self.user, self.password))

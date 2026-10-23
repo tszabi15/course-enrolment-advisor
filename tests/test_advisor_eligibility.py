@@ -13,12 +13,12 @@ from src.advisor import CourseEnrolmentAdvisor
 
 
 def test_advisor_eligibility_decision_flow():
-    pg = PostgresClient()
-    mongo = MongoClient()
-    redis = RedisClient()
-    neo = Neo4jClient()
+    pg = PostgresClient(use_mock=True)
+    mongo = MongoClient(use_mock=True)
+    redis = RedisClient(use_mock=True)
+    neo = Neo4jClient(use_mock=True)
     pg_vec = PgVectorClient(postgres_client=pg)
-    qdrant = QdrantStoreClient()
+    qdrant = QdrantStoreClient(use_mock=True)
 
     pg.connect()
     mongo.connect()

@@ -12,15 +12,19 @@ logger = logging.getLogger(__name__)
 
 
 class MongoClient:
-    def __init__(self, uri: Optional[str] = None, db_name: Optional[str] = None):
+    def __init__(self, uri: Optional[str] = None, db_name: Optional[str] = None, use_mock: bool = False):
         self.uri = uri or config.mongo.uri
         self.db_name = db_name or config.mongo.db
+        self.use_mock = use_mock
         self._client = None
         self._db = None
         self._is_connected = False
         self._mock_collection = []
 
     def connect(self):
+        if self.use_mock:
+            self._is_connected = False
+            return
         try:
             from pymongo import MongoClient as PyMongoClient
             self._client = PyMongoClient(self.uri, serverSelectionTimeoutMS=2500)

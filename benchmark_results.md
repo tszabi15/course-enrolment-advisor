@@ -20,23 +20,23 @@
 
 Every decision combines prerequisite validation in Neo4j and seat capacity verification in PostgreSQL.
 
-| Case # | Description                                                           | Expected                         | Actual Decision                  | Status |
-|--------|-----------------------------------------------------------------------|----------------------------------|----------------------------------|--------|
-| 1      | Intro student completed CS101, applies for CS102 with open seats      | APPROVED                         | APPROVED                         | PASS   |
-| 2      | Student without CS202 applies for CS301 (prereq missing)              | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS   |
-| 3      | Student applies for section at 100% full capacity                     | REJECTED_SECTION_FULL            | REJECTED_SECTION_FULL            | PASS   |
-| 4      | Student applies for section where already enrolled                    | REJECTED_ALREADY_ENROLLED        | REJECTED_ALREADY_ENROLLED        | PASS   |
-| 5      | Student has multi-hop prerequisites completed (CS101, CS102)          | APPROVED                         | APPROVED                         | PASS   |
-| 6      | Student missing CS102, applies for CS201                              | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS   |
-| 7      | Student completed equivalent course (MATH205 instead of MATH201)      | APPROVED                         | APPROVED                         | PASS   |
-| 8      | Freshman with zero courses applies for introductory CS101             | APPROVED                         | APPROVED                         | PASS   |
-| 9      | Freshman applies for introductory CS101 but section is full           | REJECTED_SECTION_FULL            | REJECTED_SECTION_FULL            | PASS   |
-| 10     | Student took prerequisite previously but received Grade 'F'           | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS   |
-| 11     | Student took prerequisite with passing Grade 'C'                      | APPROVED                         | APPROVED                         | PASS   |
-| 12     | Concurrent race condition: last remaining seat competition            | CONCURRENT_ONE_COMMITS_ONE_FAILS | CONCURRENT_ONE_COMMITS_ONE_FAILS | PASS   |
-| 13     | Student applies for valid Summer term course with open seats          | APPROVED                         | APPROVED                         | PASS   |
-| 14     | Course requires multiple prerequisites; student completed only 1 of 2 | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS   |
-| 15     | Course requires multiple prerequisites; student completed both        | APPROVED                         | APPROVED                         | PASS   |
+|   Case # | Description                                                           | Expected                         | Actual Decision                  | Status   |
+|----------|-----------------------------------------------------------------------|----------------------------------|----------------------------------|----------|
+|        1 | Intro student completed CS101, applies for CS102 with open seats      | APPROVED                         | APPROVED                         | PASS     |
+|        2 | Student without CS202 applies for CS301 (prereq missing)              | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS     |
+|        3 | Student applies for section at 100% full capacity                     | REJECTED_SECTION_FULL            | REJECTED_SECTION_FULL            | PASS     |
+|        4 | Student applies for section where already enrolled                    | REJECTED_ALREADY_ENROLLED        | REJECTED_ALREADY_ENROLLED        | PASS     |
+|        5 | Student has multi-hop prerequisites completed (CS101, CS102)          | APPROVED                         | APPROVED                         | PASS     |
+|        6 | Student missing CS102, applies for CS201                              | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS     |
+|        7 | Student completed equivalent course (MATH205 instead of MATH201)      | APPROVED                         | APPROVED                         | PASS     |
+|        8 | Freshman with zero courses applies for introductory CS101             | APPROVED                         | APPROVED                         | PASS     |
+|        9 | Freshman applies for introductory CS101 but section is full           | REJECTED_SECTION_FULL            | REJECTED_SECTION_FULL            | PASS     |
+|       10 | Student took prerequisite previously but received Grade 'F'           | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS     |
+|       11 | Student took prerequisite with passing Grade 'C'                      | APPROVED                         | APPROVED                         | PASS     |
+|       12 | Concurrent race condition: last remaining seat competition            | CONCURRENT_ONE_COMMITS_ONE_FAILS | CONCURRENT_ONE_COMMITS_ONE_FAILS | PASS     |
+|       13 | Student applies for valid Summer term course with open seats          | APPROVED                         | APPROVED                         | PASS     |
+|       14 | Course requires multiple prerequisites; student completed only 1 of 2 | REJECTED_PREREQUISITES_NOT_MET   | REJECTED_PREREQUISITES_NOT_MET   | PASS     |
+|       15 | Course requires multiple prerequisites; student completed both        | APPROVED                         | APPROVED                         | PASS     |
 
 *Summary: 15/15 test cases passed (100% decision compliance).*
 
@@ -46,34 +46,34 @@ Every decision combines prerequisite validation in Neo4j and seat capacity verif
 
 Evaluated with normalized `sentence-transformers/all-MiniLM-L6-v2` embeddings (384 dimensions, cosine distance metric) over the course catalog.
 
-| Q# | Target          | pg_R@5 | pg_MRR | pg_ANN@10 | qd_R@5 | qd_MRR | qd_ANN@10 | Shared_Top10 |
-|----|-----------------|--------|--------|-----------|--------|--------|-----------|--------------|
-| 1  | CS301           | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 2  | CS302           | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 3  | CS501,CS401     | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 4  | DATA401         | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 5  | DATA301         | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 6  | DATA405         | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 7  | DATA402         | 0.0    | 0.10   | 1.00      | 0.0    | 0.10   | 1.00      | 10/10        |
-| 8  | DATA501         | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 9  | MATH201,MATH205 | 1.0    | 0.50   | 1.00      | 1.0    | 0.50   | 1.00      | 10/10        |
-| 10 | MATH102         | 1.0    | 0.33   | 1.00      | 1.0    | 0.33   | 1.00      | 10/10        |
-| 11 | MATH301         | 1.0    | 0.50   | 1.00      | 1.0    | 0.50   | 1.00      | 10/10        |
-| 12 | ECE101          | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 13 | ECE201          | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 14 | ECE401          | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 15 | CS405           | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 16 | CS450           | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 17 | CS502           | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 18 | STAT301         | 0.0    | 0.00   | 1.00      | 0.0    | 0.00   | 1.00      | 10/10        |
-| 19 | BUS201          | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
-| 20 | BUS301          | 1.0    | 1.00   | 1.00      | 1.0    | 1.00   | 1.00      | 10/10        |
+|   Q# | Target          |   pg_R@5 |   pg_MRR |   pg_ANN@10 |   qd_R@5 |   qd_MRR |   qd_ANN@10 | Shared_Top10   |
+|------|-----------------|----------|----------|-------------|----------|----------|-------------|----------------|
+|    1 | CS301           |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    2 | CS302           |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    3 | CS401,CS501     |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    4 | DATA401         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    5 | DATA301         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    6 | DATA405         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    7 | DATA402         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    8 | DATA501         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    9 | MATH205,MATH201 |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   10 | MATH102         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   11 | MATH301         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   12 | ECE101          |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   13 | ECE201          |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   14 | ECE401          |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   15 | CS405           |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   16 | CS450           |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   17 | CS502           |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   18 | STAT301         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   19 | BUS201          |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|   20 | BUS301          |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
 
 ### Overall Retrieval Metrics Summary
 | Metric | pgvector (PostgreSQL) | Qdrant (Dedicated Engine) |
 | :--- | :--- | :--- |
-| **Mean Recall@5** | **0.900** | **0.900** |
-| **Mean MRR (Mean Reciprocal Rank)** | **0.822** | **0.822** |
+| **Mean Recall@5** | **1.000** | **1.000** |
+| **Mean MRR (Mean Reciprocal Rank)** | **1.000** | **1.000** |
 | **Mean ANN Recall@10 (HNSW vs. Exact)** | **1.000** | **1.000** |
 | **Inter-System Top-10 Overlap** | **10.0 / 10** | **10.0 / 10** |
 
@@ -83,12 +83,12 @@ Evaluated with normalized `sentence-transformers/all-MiniLM-L6-v2` embeddings (3
 
 Benchmarking semantic vector search filtered by semester (`Summer`, keeping ~5% of courses).
 
-| Store    | Configuration                               | Filter Selectivity | Results Count | ANN Recall@10 | Latency (ms) |
-|----------|---------------------------------------------|--------------------|---------------|---------------|--------------|
-| pgvector | HNSW (ef_search=10, iterative_scan=off)     | ~5% (Summer)       | 10            | 1.00          | 3.35         |
-| pgvector | HNSW (ef_search=60, iterative_scan=relaxed) | ~5% (Summer)       | 10            | 1.00          | 3.35         |
-| Qdrant   | Payload Filter (hnsw_ef=16)                 | ~5% (Summer)       | 10            | 1.00          | 3.30         |
-| Qdrant   | Payload Filter + Index (hnsw_ef=64)         | ~5% (Summer)       | 10            | 1.00          | 3.29         |
+| Store    | Configuration                               | Filter Selectivity   |   Results Count |   ANN Recall@10 |   Latency (ms) |
+|----------|---------------------------------------------|----------------------|-----------------|-----------------|----------------|
+| pgvector | HNSW (ef_search=10, iterative_scan=off)     | ~5% (Summer)         |              10 |               1 |           3.3  |
+| pgvector | HNSW (ef_search=60, iterative_scan=relaxed) | ~5% (Summer)         |              10 |               1 |           3.25 |
+| Qdrant   | Payload Filter (hnsw_ef=16)                 | ~5% (Summer)         |              10 |               1 |           4.99 |
+| Qdrant   | Payload Filter + Index (hnsw_ef=64)         | ~5% (Summer)         |              10 |               1 |           3.36 |
 
 ### Architectural Insights & Tuning:
 - In **pgvector**, when a filter has high selectivity (~5%), naive HNSW index scan with low `ef_search` suffers from graph disconnection because candidate vectors are excluded post-traversal. Enabling `hnsw.iterative_scan = 'relaxed'` (or increasing `ef_search` to 60) instructs pgvector to dynamically traverse deeper until the requested `LIMIT` is fulfilled, recovering ANN recall from **1.00** to **1.00**.
@@ -98,10 +98,10 @@ Benchmarking semantic vector search filtered by semester (`Summer`, keeping ~5% 
 
 ## 5. Architectural Query Pattern Comparison
 
-| Paradigm                 | Execution Mechanism                                                                                      | Returned Items | Latency (ms) | Top Course              |
-|--------------------------|----------------------------------------------------------------------------------------------------------|----------------|--------------|-------------------------|
-| pgvector Single SQL Join | Single relational query joining vector index + courses + sections table directly in DB engine            | 5              | 5.61         | MATH301 (20 seats open) |
-| Qdrant Two-Step Query    | Step 1: Network RPC to Qdrant vector search; Step 2: Relational query to Postgres for seats verification | 5              | 4.08         | MATH301 (20 seats open) |
+| Paradigm                 | Execution Mechanism                                                                                      |   Returned Items |   Latency (ms) | Top Course            |
+|--------------------------|----------------------------------------------------------------------------------------------------------|------------------|----------------|-----------------------|
+| pgvector Single SQL Join | Single relational query joining vector index + courses + sections table directly in DB engine            |                5 |           3.95 | CS301 (20 seats open) |
+| Qdrant Two-Step Query    | Step 1: Network RPC to Qdrant vector search; Step 2: Relational query to Postgres for seats verification |                5 |           5.86 | CS301 (18 seats open) |
 
 - **pgvector Integrated Single SQL Query**:
   ```sql

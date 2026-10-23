@@ -13,15 +13,19 @@ logger = logging.getLogger(__name__)
 
 
 class QdrantStoreClient:
-    def __init__(self, host: Optional[str] = None, port: Optional[int] = None, collection: Optional[str] = None):
+    def __init__(self, host: Optional[str] = None, port: Optional[int] = None, collection: Optional[str] = None, use_mock: bool = False):
         self.host = host or config.qdrant.host
         self.port = port or config.qdrant.port
         self.collection = collection or config.qdrant.collection
+        self.use_mock = use_mock
         self._client = None
         self._is_connected = False
         self._mock_points: List[Dict[str, Any]] = []
 
     def connect(self):
+        if self.use_mock:
+            self._is_connected = False
+            return
         try:
             from qdrant_client import QdrantClient
             self._client = QdrantClient(host=self.host, port=self.port, timeout=3.0)
@@ -98,13 +102,25 @@ class QdrantStoreClient:
                 query_filter = models.Filter(
                     must=[models.FieldCondition(key="semester", match=models.MatchValue(value=semester))]
                 )
-            results = self._client.search(
-                collection_name=self.collection,
-                query_vector=query_vector,
-                query_filter=query_filter,
-                limit=limit,
-                search_params=models.SearchParams(exact=True)
-            )
+            search_params = models.SearchParams(exact=True)
+            if hasattr(self._client, "search"):
+                points = self._client.search(
+                    collection_name=self.collection,
+                    query_vector=query_vector,
+                    query_filter=query_filter,
+                    limit=limit,
+                    search_params=search_params
+                )
+            else:
+                resp = self._client.query_points(
+                    collection_name=self.collection,
+                    query=query_vector,
+                    query_filter=query_filter,
+                    limit=limit,
+                    search_params=search_params
+                )
+                points = resp.points
+
             return [
                 {
                     "course_id": r.payload["course_id"],
@@ -114,7 +130,7 @@ class QdrantStoreClient:
                     "semester": r.payload["semester"],
                     "score": float(r.score)
                 }
-                for r in results
+                for r in points
             ]
         else:
             from src.embeddings import cosine_similarity
@@ -153,13 +169,25 @@ class QdrantStoreClient:
                 query_filter = models.Filter(
                     must=[models.FieldCondition(key="semester", match=models.MatchValue(value=semester))]
                 )
-            results = self._client.search(
-                collection_name=self.collection,
-                query_vector=query_vector,
-                query_filter=query_filter,
-                limit=limit,
-                search_params=models.SearchParams(hnsw_ef=hnsw_ef, exact=False)
-            )
+            search_params = models.SearchParams(hnsw_ef=hnsw_ef, exact=False)
+            if hasattr(self._client, "search"):
+                points = self._client.search(
+                    collection_name=self.collection,
+                    query_vector=query_vector,
+                    query_filter=query_filter,
+                    limit=limit,
+                    search_params=search_params
+                )
+            else:
+                resp = self._client.query_points(
+                    collection_name=self.collection,
+                    query=query_vector,
+                    query_filter=query_filter,
+                    limit=limit,
+                    search_params=search_params
+                )
+                points = resp.points
+
             res = [
                 {
                     "course_id": r.payload["course_id"],
@@ -169,7 +197,7 @@ class QdrantStoreClient:
                     "semester": r.payload["semester"],
                     "score": float(r.score)
                 }
-                for r in results
+                for r in points
             ]
         else:
             exact = self.search_exact(query_vector, limit=limit, semester=semester)
