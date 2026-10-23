@@ -56,7 +56,7 @@ Evaluated with normalized `sentence-transformers/all-MiniLM-L6-v2` embeddings (3
 |    6 | DATA405         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
 |    7 | DATA402         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
 |    8 | DATA501         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
-|    9 | MATH205,MATH201 |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
+|    9 | MATH201,MATH205 |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
 |   10 | MATH102         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
 |   11 | MATH301         |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
 |   12 | ECE101          |        1 |        1 |           1 |        1 |        1 |           1 | 10/10          |
@@ -85,10 +85,10 @@ Benchmarking semantic vector search filtered by semester (`Summer`, keeping ~5% 
 
 | Store    | Configuration                               | Filter Selectivity   |   Results Count |   ANN Recall@10 |   Latency (ms) |
 |----------|---------------------------------------------|----------------------|-----------------|-----------------|----------------|
-| pgvector | HNSW (ef_search=10, iterative_scan=off)     | ~5% (Summer)         |              10 |               1 |           3.3  |
-| pgvector | HNSW (ef_search=60, iterative_scan=relaxed) | ~5% (Summer)         |              10 |               1 |           3.25 |
-| Qdrant   | Payload Filter (hnsw_ef=16)                 | ~5% (Summer)         |              10 |               1 |           4.99 |
-| Qdrant   | Payload Filter + Index (hnsw_ef=64)         | ~5% (Summer)         |              10 |               1 |           3.36 |
+| pgvector | HNSW (ef_search=10, iterative_scan=off)     | ~5% (Summer)         |              10 |               1 |           2.95 |
+| pgvector | HNSW (ef_search=60, iterative_scan=relaxed) | ~5% (Summer)         |              10 |               1 |           2.7  |
+| Qdrant   | Payload Filter (hnsw_ef=16)                 | ~5% (Summer)         |              10 |               1 |           3.27 |
+| Qdrant   | Payload Filter + Index (hnsw_ef=64)         | ~5% (Summer)         |              10 |               1 |           2.85 |
 
 ### Architectural Insights & Tuning:
 - In **pgvector**, when a filter has high selectivity (~5%), naive HNSW index scan with low `ef_search` suffers from graph disconnection because candidate vectors are excluded post-traversal. Enabling `hnsw.iterative_scan = 'relaxed'` (or increasing `ef_search` to 60) instructs pgvector to dynamically traverse deeper until the requested `LIMIT` is fulfilled, recovering ANN recall from **1.00** to **1.00**.
@@ -100,8 +100,8 @@ Benchmarking semantic vector search filtered by semester (`Summer`, keeping ~5% 
 
 | Paradigm                 | Execution Mechanism                                                                                      |   Returned Items |   Latency (ms) | Top Course            |
 |--------------------------|----------------------------------------------------------------------------------------------------------|------------------|----------------|-----------------------|
-| pgvector Single SQL Join | Single relational query joining vector index + courses + sections table directly in DB engine            |                5 |           3.95 | CS301 (20 seats open) |
-| Qdrant Two-Step Query    | Step 1: Network RPC to Qdrant vector search; Step 2: Relational query to Postgres for seats verification |                5 |           5.86 | CS301 (18 seats open) |
+| pgvector Single SQL Join | Single relational query joining vector index + courses + sections table directly in DB engine            |                5 |           2.82 | CS301 (20 seats open) |
+| Qdrant Two-Step Query    | Step 1: Network RPC to Qdrant vector search; Step 2: Relational query to Postgres for seats verification |                5 |           5.06 | CS301 (20 seats open) |
 
 - **pgvector Integrated Single SQL Query**:
   ```sql
