@@ -7,7 +7,7 @@
 
 ---
 
-## 1. Vezetői összefoglaló és a probléma megfogalmazása
+## 1. Összefoglaló, problémafelvetés
 
 A korszerű felsőoktatási tárgyfelvételi rendszerek összetett követelményrendszer mentén hozzák meg döntéseiket. Amikor egy hallgató jelentkezik egy kurzusra, a rendszernek egyidejűleg kell ellenőriznie szigorú tanulmányi előfeltételeket (előzetesen elvégzett kurzusok, minimális érdemjegy, tantárgyi ekvivalenciák) és fizikai korlátokat (termi és oktatói kapacitás). Ezen felül a modern tanácsadó moduloknak támogatniuk kell a polimorf tantárgyi tematikák (laborok, projektek, vizsgák, irodalomjegyzékek) kezelését, valamint a szabad szöveges hallgatói érdeklődéshez illeszkedő szemantikus kurzusajánlást.
 
@@ -22,7 +22,7 @@ A rendszert 15 felvételi tesztesettel, 20 címkézett szemantikus lekérdezéss
 
 ---
 
-## 2. Rendszerarchitektúra és adattár-indoklások (Egy-egy mondat adattáranként)
+## 2. Rendszerarchitektúra
 
 ```
 +---------------------------------------------------------------------------------------------------+
@@ -52,7 +52,7 @@ A rendszert 15 felvételi tesztesettel, 20 címkézett szemantikus lekérdezéss
 +---------------------------------------------------------------------------------------------------+
 ```
 
-### Az adattárak szerepének indoklása (One Reason Per Store)
+### Az adattárak szerepe
 
 1. **PostgreSQL 16 (`pgvector:pg16`) — Relációs, Hiteles forrás (System of Record):**  
    A hallgatók, kurzusok, szekciók és beiratkozások hiteles forrásaként szolgál, mivel a beiratkozási időszakban fellépő versenyhelyzetek és a túljelentkezés kizárásához elengedhetetlenek az ACID tranzakciók, a szigorú sorszintű zárolás (`SELECT ... FOR UPDATE`) és a relációs integritási feltételek (`CHECK (seats_taken <= capacity)`, `UNIQUE (student_id, section_id)`).
